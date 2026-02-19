@@ -21,3 +21,17 @@ jobs:
         run: |
           set -e
           find . -name '*.lua' -not -path './.git/*' -print0 | xargs -0 -n1 luac -p
+
+      - name: Verify LICENSE file exists
+        run: |
+          if [ -f LICENSE ] || [ -f LICENSE.md ] || [ -f licence ]; then
+            echo "LICENSE file found"
+            exit 0
+          fi
+          # try README for license mention
+          if grep -i -E "(mit|apache|gpl|bsd|licen[cs]e|spdx)" README.md >/dev/null 2>&1; then
+            echo "License reference found in README"
+            exit 0
+          fi
+          echo "ERROR: No LICENSE file or reference found. Add a LICENSE file to the repository." >&2
+          exit 1

@@ -1,0 +1,41 @@
+name: Auto label on CI success
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  label-on-success:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add label to PRs associated with workflow run
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const labelName = 'ci-passed'
+            const { owner, repo } = context.repo
+            const prs = github.context.payload.workflow_run.pull_requests || []
+            if (prs.length === 0) {
+              core.info('No pull requests associated with this workflow run.')
+            }
+            for (const pr of prs) {
+              const issue_number = pr.number
+              try {
+                await github.rest.issues.addLabels({ owner, repo, issue_number, labels: [labelName] })
+                core.info(`Added label '${labelName}' to PR #${issue_number}`)
+              } catch (err) {
+                core.info(`Label '${labelName}' may not exist, attempting to create it.`)
+                try {
+                  await github.rest.issues.createLabel({ owner, repo, name: labelName, color: '0E8A16', description: 'CI passed' })
+                  await github.rest.issues.addLabels({ owner, repo, issue_number, labels: [labelName] })
+                  core.info(`Created and added label '${labelName}' to PR #${issue_number}`)
+                } catch (err2) {
+                  core.warning(`Failed to create/add label for PR #${issue_number}: ${err2}`)
+                }
+              }
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

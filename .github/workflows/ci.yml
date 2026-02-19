@@ -35,3 +35,37 @@ jobs:
           fi
           echo "ERROR: No LICENSE file or reference found. Add a LICENSE file to the repository." >&2
           exit 1
+
+  pr-guard:
+    name: PR Guard (Required checklist)
+    runs-on: ubuntu-latest
+    needs: lua-syntax-check
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Check PR required checklist
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = context.payload.pull_request || {}
+            const body = pr.body || ''
+            const required = [
+              'CI:',
+              'Licence:',
+              'Documentation:',
+              'Tests manuels:',
+              'Pas de code de debug',
+              'Data persistence:',
+              'Approval:'
+            ]
+
+            function escapeForRegex(s) { return s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&') }
+
+            const missing = required.filter(k => {
+              const re = new RegExp(`- \\\[([xX])\\\][^\\n]*${escapeForRegex(k)}`,'i')
+              return !re.test(body)
+            })
+
+            if (missing.length > 0) {
+              throw new Error(`Required checklist items not all checked: ${missing.join(', ')}`)
+            }
+            console.log('PR checklist: all required items checked.')

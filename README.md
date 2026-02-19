@@ -74,3 +74,9 @@ Bouton de test DataStore (UI)
 - Utilisation sûre : garde ce bouton désactivé/public uniquement pour le créateur (le script le masque automatiquement pour les autres joueurs).
 
 Conseil de test : en Play (Solo) l'overlay devrait apparaître brièvement au spawn. En Studio, DataStore n'est pas toujours disponible — regarde la console pour les warnings et vérifie que l'overlay affiche une erreur si le chargement échoue.
+
+## Licence
+
+Ce projet est distribué sous la licence MIT — voir le fichier [LICENSE](LICENSE) pour le texte complet. En ajoutant cette licence, tu autorises l'utilisation, la modification et la redistribution du code selon les termes de la MIT.
+
+Si tu préfères une autre licence (Apache-2.0, GPL-3.0, etc.), dis-moi laquelle et je la remplacerai.

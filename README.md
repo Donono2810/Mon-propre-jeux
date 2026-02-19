@@ -1,5 +1,7 @@
 Mon-propre-jeux — Guide rapide d'installation et de test
 
+[![CI](https://github.com/Donono2810/Mon-propre-jeux/actions/workflows/ci.yml/badge.svg)](https://github.com/Donono2810/Mon-propre-jeux/actions/workflows/ci.yml)
+
 But: Ce dépôt contient des scripts Lua pour Roblox (prototype RPG simple).
 
 Placement des scripts dans Roblox Studio

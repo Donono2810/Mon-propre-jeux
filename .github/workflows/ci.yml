@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  lua-syntax-check:
+    name: Lua syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Lua
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+
+      - name: Syntax-check all Lua files
+        run: |
+          set -e
+          find . -name '*.lua' -not -path './.git/*' -print0 | xargs -0 -n1 luac -p

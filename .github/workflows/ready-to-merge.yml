@@ -1,0 +1,69 @@
+name: Ready to merge labeler
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, labeled, unlabeled, reopened]
+
+jobs:
+  check-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR checklist and labels
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { owner, repo } = context.repo
+            const prNumber = context.payload.pull_request.number
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: prNumber })
+            const body = pr.body || ''
+            const labels = pr.labels.map(l => l.name)
+
+            const requiredKeywords = [
+              'CI:',
+              'Licence:',
+              'Documentation:',
+              'Tests manuels:',
+              'Pas de code de debug',
+              'Data persistence:',
+              'Approval:'
+            ]
+
+            function escaped(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
+
+            const allChecked = requiredKeywords.every(k => {
+              const re = new RegExp(`- \\\[([xX])\\\][^\\n]*${escaped(k)}`,'i')
+              return re.test(body)
+            })
+
+            const ciPassed = labels.includes('ci-passed')
+            const readyLabel = 'ready-to-merge'
+
+            if (allChecked && ciPassed) {
+              try {
+                await github.rest.issues.addLabels({ owner, repo, issue_number: prNumber, labels: [readyLabel] })
+                core.info(`Added label ${readyLabel} to PR #${prNumber}`)
+              } catch (err) {
+                core.info(`Label ${readyLabel} may not exist, attempting to create it.`)
+                try {
+                  await github.rest.issues.createLabel({ owner, repo, name: readyLabel, color: '1F8EF1', description: 'PR satisfies required checklist and CI passed' })
+                  await github.rest.issues.addLabels({ owner, repo, issue_number: prNumber, labels: [readyLabel] })
+                  core.info(`Created and added label ${readyLabel} to PR #${prNumber}`)
+                } catch (err2) {
+                  core.warning(`Failed to create/add label for PR #${prNumber}: ${err2}`)
+                }
+              }
+            } else {
+              // remove label if present
+              if (labels.includes(readyLabel)) {
+                try {
+                  await github.rest.issues.removeLabel({ owner, repo, issue_number: prNumber, name: readyLabel })
+                  core.info(`Removed label ${readyLabel} from PR #${prNumber}`)
+                } catch (err) {
+                  core.warning(`Failed to remove label ${readyLabel} from PR #${prNumber}: ${err}`)
+                }
+              } else {
+                core.info(`PR #${prNumber} not ready: allChecked=${allChecked}, ciPassed=${ciPassed}`)
+              }
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
